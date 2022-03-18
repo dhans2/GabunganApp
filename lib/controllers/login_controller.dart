@@ -6,6 +6,9 @@ import 'package:flutter_auth/services/login_service.dart';
 import 'package:get/get.dart';
 import 'package:flutter_auth/models/LoginS_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:flutter_auth/env/env.dart';
+import 'package:http/http.dart' as http;
 
 class LoginController extends GetxController {
   var txtPasswordVisibility = true.obs;
@@ -16,19 +19,42 @@ class LoginController extends GetxController {
       TextEditingController();
 
   void userLogin() async {
-    try {
-      var response = await LoginService.loginUser(
-          usernameEditingController.text, passwordEditingController.text);
+    final response = await http.post(Uri.parse(Envirotment.endpointLoginUser),
+        headers: <String, String>{
+          "Content-Type": "application/json; charset=UTF-8",
+        },
+        body: jsonEncode(
+            <String, String>{"username": usernameEditingController.text, "password": passwordEditingController.text}));
+
+    if (response.statusCode == 200) {
+      Map<String,dynamic>respData = jsonDecode(response.body);
+      print(respData['login_type']);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', response.token);
-      await prefs.setString('login_type', response.login_type);
-      if (await response.login_type == "admin") {
+      await prefs.setString('token', respData['token']);
+      await prefs.setString('login_type', respData['login_type']);
+      await prefs.setString('username', respData['user']['username']);
+      if(respData["login_type"] == "Admin"){
         await Get.to(() => AdminHomeScreen());
-      } else if (await response.login_type == "users") {
+      }else{
         await Get.to(() => HomePage());
       }
-    } catch (e) {
-      print(e);
+    } else {
+      //throw Exception('Failed to Login User');
     }
+
+    // try {
+    //   var response = await LoginService.loginUser(usernameEditingController.text, passwordEditingController.text);
+    //   print(response);
+    //   final prefs = await SharedPreferences.getInstance();
+    //   await prefs.setString('token', response.token);
+    //   await prefs.setString('login_type', response.login_type);
+    //   if (await response.login_type == "admin") {
+    //     await Get.to(() => AdminHomeScreen());
+    //   } else if (await response.login_type == "users") {
+    //     await Get.to(() => HomePage());
+    //   }
+    // } catch (e) {
+    //   print(e);
+    // }
   }
 }

@@ -15,7 +15,9 @@ class LoginService {
             <String, String>{"username": username, "password": password}));
 
     if (response.statusCode == 200) {
-      print(response.body);
+      //print(response.body);
+      // Map<String,dynamic>respData = jsonDecode(response.body);
+      // print(respData['user']);
       return ResponseSuccessLogin.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to Login User');
